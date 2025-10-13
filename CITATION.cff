@@ -1,0 +1,10 @@
+
+cff-version: 1.2.0
+title: "TCC — Fusão Multimodel Supervisionada (RGB) no FieldSAFE"
+authors:
+  - family-names: Jeronymo
+    given-names: Osvaldo
+    orcid: "https://orcid.org/0000-0000-0000-0000"
+date-released: 2025-10-13
+message: "Se utilizar este repositório, por favor cite-o."
+license: MIT

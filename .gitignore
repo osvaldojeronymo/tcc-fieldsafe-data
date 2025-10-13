@@ -1,0 +1,51 @@
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data & model artifacts
+data/
+datasets/
+results/
+outputs/
+logs/
+wandb/
+.dvc/
+*.dvc
+*.pth
+*.pt
+*.onnx
+*.ckpt
+*.tflite
+*.npz
+*.npy
+
+# ROS bag files
+*.bag
+*.bag.active
+
+# LaTeX build
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.synctex.gz
+build/
+
+# OS
+.DS_Store
+Thumbs.db
