@@ -1,0 +1,96 @@
+# experiments/configs/dataset.yml
+dataset_name: FieldSAFE
+version: 1.0
+
+# === Onde estão os dados prontos para uso (após extração + resize) ===
+# Ajuste o base_dir para seu ambiente local ou Colab.
+base_dir: "/home/osvaldo/projetos/tcc/tcc-fieldsafe-rgb-ensemble/datasets/fieldsafe_rgb_ready"
+
+paths:
+  # Saída do script prepare_rgb_subset.py
+  split_dir: "${base_dir}/split"
+  train_images: "${paths.split_dir}/train/images"
+  val_images:   "${paths.split_dir}/val/images"
+  test_images:  "${paths.split_dir}/test/images"
+
+  # (Opcional) se você converter rótulos p/ YOLO depois:
+  train_labels: "${paths.split_dir}/train/labels"
+  val_labels:   "${paths.split_dir}/val/labels"
+  test_labels:  "${paths.split_dir}/test/labels"
+
+# === Formato das imagens ===
+images:
+  width:  640
+  height: 640
+  channels: 3
+  extension: ".png"   # mude para ".jpg" se preferir
+
+# === Classes e mapeamento ===
+# Ajuste as classes de acordo com o que você extrair do FieldSAFE.
+classes:
+  - person
+  - machine
+  - bale
+  - vegetation
+  - ground
+class_to_id:
+  person: 0
+  machine: 1
+  bale: 2
+  vegetation: 3
+  ground: 4
+
+# === Rótulos ===
+labels:
+  format: "yolo"           # "yolo" (cx,cy,w,h normalizados)
+  one_txt_per_image: true  # um .txt por imagem, mesmo nome do arquivo
+  encoding: "utf-8"
+
+# === Divisão dos dados (esperada) ===
+split:
+  train_ratio: 0.70
+  val_ratio:   0.15
+  test_ratio:  0.15
+  seed: 42
+  stratify: true
+
+# === Normalização (opcional — coloque valores reais depois que medir) ===
+normalization:
+  mean: [0.485, 0.456, 0.406]  # placeholder (ImageNet)
+  std:  [0.229, 0.224, 0.225]  # placeholder (ImageNet)
+
+# === Data augmentation (exemplo; configure no código/notebooks) ===
+augmentation:
+  horizontal_flip: true
+  brightness: [0.9, 1.1]
+  contrast:   [0.9, 1.1]
+  random_crop: false
+
+# === Metadados de origem (para reprodutibilidade) ===
+provenance:
+  raw_bags:
+    - "2016-10-25-11-41-21.bag"
+    - "2016-10-25-11-34-25.bag"
+    - "2016-10-25-12-07-22.bag"
+    - "2016-10-25-12-37-57.bag"
+  extraction:
+    script: "src/data/extract_rosbag.py"
+    topic: "/camera/rgb/image_color"   # ajuste conforme seu bag
+    output_examples:
+      - "datasets/extract_114121/images/*.png"
+  preprocessing:
+    script: "src/data/prepare_rgb_subset.py"
+    resized_to: [640, 640]
+    split_done: true
+
+# === Compat: YOLOv5/8 treinos (se quiser usar diretam. com trainers YOLO) ===
+yolo:
+  names:
+    0: person
+    1: machine
+    2: bale
+    3: vegetation
+    4: ground
+  train: "${paths.train_images}"
+  val:   "${paths.val_images}"
+  test:  "${paths.test_images}"

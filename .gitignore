@@ -18,6 +18,22 @@ datasets/
 results/
 outputs/
 logs/
+
+# Project specific
+*.bag
+*.pth
+*.pt
+*.weights
+checkpoints/
+figures/
+
+# Keep important configs and small data files
+!experiments/configs/*.yml
+!**/manifests/*.csv
+!docs/*.png
+
+# Documentation
+docs/_build/
 wandb/
 .dvc/
 *.dvc

@@ -1,0 +1,200 @@
+# Configuração do Ensemble FieldSAFE RGB
+# Este arquivo centraliza todas as configurações para reprodutibilidade
+
+# Informações do Dataset
+dataset:
+  name: "FieldSAFE RGB Ensemble"
+  source_path: "datasets/FieldSAFE/_raw"
+  preprocessed_path: "datasets/fieldsafe_rgb_preprocessed"
+  
+  # Estatísticas do pré-processamento
+  stats:
+    total_images: 8185
+    total_sequences: 8
+    splits:
+      train: 
+        images: 5341
+        percentage: 65.3
+      val:
+        images: 2468  
+        percentage: 30.2
+      test:
+        images: 376
+        percentage: 4.6
+  
+  # Configurações de imagem
+  image:
+    size: [640, 640]  # [height, width]
+    channels: 3       # RGB
+    format: "PNG"
+    normalization: [0.0, 1.0]  # range [min, max]
+
+# Configuração dos Modelos
+models:
+  yolo_v5:
+    type: "object_detection"
+    input_size: [640, 640]
+    classes: ["fardo", "maquina", "pessoa", "veiculo", "cultivado"]
+    num_classes: 5
+    normalization:
+      mean: [0.485, 0.456, 0.406]  # ImageNet
+      std: [0.229, 0.224, 0.225]   # ImageNet
+    pretrained: true
+    repository: "ultralytics/yolov5"
+    model_variant: "yolov5s"
+    
+  segnet:
+    type: "semantic_segmentation"
+    input_size: [640, 640]
+    classes: ["cultivado", "nao_cultivado", "fardo", "maquina", "pessoa"]
+    num_classes: 5
+    normalization:
+      mean: [0.485, 0.456, 0.406]  # ImageNet
+      std: [0.229, 0.224, 0.225]   # ImageNet
+    architecture:
+      encoder: "vgg16"
+      decoder: "transpose_conv"
+      indices_pooling: true
+      
+  autoencoder:
+    type: "anomaly_detection"
+    input_size: [640, 640]
+    classes: ["normal", "anomalia"]
+    num_classes: 2
+    normalization:
+      mean: [0.0, 0.0, 0.0]  # Mantém [0,1]
+      std: [1.0, 1.0, 1.0]   # Mantém [0,1]
+    architecture:
+      latent_dim: 256
+      encoder_channels: [32, 64, 128, 256]
+      decoder_channels: [256, 128, 64, 32]
+
+# Configuração do Ensemble
+ensemble:
+  type: "supervised_fusion"
+  input_models: ["yolo_v5", "segnet", "autoencoder"]
+  fusion_strategy: "attention_weighted"
+  
+  architecture:
+    attention_heads: 4
+    hidden_dim: 128
+    dropout: 0.1
+    activation: "relu"
+    
+  output:
+    num_classes: 2  # obstacle/no_obstacle
+    decision_threshold: 0.5
+    
+  training:
+    loss_function: "binary_cross_entropy"
+    optimizer: "adam"
+    learning_rate: 0.001
+    weight_decay: 0.0001
+    scheduler: "cosine_annealing"
+
+# Configurações de Treinamento
+training:
+  batch_size: 16
+  num_epochs: 100
+  early_stopping:
+    patience: 10
+    min_delta: 0.001
+    
+  data_loading:
+    num_workers: 4
+    pin_memory: true
+    shuffle_train: true
+    drop_last_train: true
+    
+  augmentation:
+    enabled: false  # Para manter consistência metodológica
+    
+  validation:
+    frequency: 1  # A cada época
+    metrics: ["accuracy", "precision", "recall", "f1", "auc"]
+    
+  checkpointing:
+    save_best: true
+    save_frequency: 10
+    path: "checkpoints/"
+
+# Configurações de Avaliação
+evaluation:
+  metrics:
+    classification: ["accuracy", "precision", "recall", "f1_score", "auc_roc", "confusion_matrix"]
+    ensemble: ["model_agreement", "fusion_weights", "confidence_scores"]
+    
+  visualization:
+    confusion_matrix: true
+    roc_curves: true
+    prediction_samples: true
+    feature_maps: true
+    attention_weights: true
+    
+  reporting:
+    format: ["json", "csv", "pdf"]
+    include_per_sequence: true
+    include_model_comparison: true
+    pretrained: true
+    
+  segnet:
+    name: "segnet_fieldsafe" 
+    num_classes: 5
+    class_names: ["background", "area_cultivada", "area_nao_cultivada", "obstaculo", "caminho_navegavel"]
+    encoder_depth: 5
+    
+  autoencoder:
+    name: "autoencoder_fieldsafe"
+    latent_dim: 512
+    num_filters: [32, 64, 128, 256]
+    anomaly_threshold: 0.1
+    
+# === ENSEMBLE ===
+ensemble:
+  name: "supervised_fusion_ensemble"
+  feature_dims:
+    yolo: 512
+    segnet: 512
+    autoencoder: 512
+  fusion_hidden_dim: 256
+  num_attention_heads: 4
+  dropout_rate: 0.2
+  obstacle_threshold: 0.5
+
+# === DATASET ===
+dataset:
+  input_size: [640, 640]
+  base_dir: "datasets/fieldsafe_rgb_ready"
+  splits:
+    train: "split/train"
+    val: "split/val" 
+    test: "split/test"
+  
+# === TREINAMENTO ===
+training:
+  batch_size: 16
+  learning_rate: 0.001
+  num_epochs: 100
+  weight_decay: 0.0001
+  scheduler: "cosine"
+  early_stopping_patience: 10
+  
+  # Pesos para perda combinada
+  loss_weights:
+    ensemble: 1.0
+    consistency: 0.1
+    confidence: 0.1
+
+# === AVALIAÇÃO ===
+evaluation:
+  metrics: ["accuracy", "precision", "recall", "f1", "auc"]
+  confidence_thresholds: [0.3, 0.5, 0.7, 0.9]
+  save_predictions: true
+  generate_confusion_matrix: true
+  
+# === PATHS ===
+paths:
+  models: "experiments/models"
+  logs: "experiments/logs" 
+  results: "experiments/results"
+  checkpoints: "experiments/checkpoints"
