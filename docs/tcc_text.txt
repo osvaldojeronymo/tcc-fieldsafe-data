@@ -1,0 +1,551 @@
+Trabalho de Conclusão de Curso - DSBD/UFPR
+
+              Osvaldo Jeronymo Neto
+
+                   2025-12-05
+Índice
+
+Apresentação                                                                                           3
+
+1 Introdução                                                                                           4
+  1.1 Resumo e Objetivo . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .      4
+  1.2 Automação Agrícola . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .       5
+  1.3 Proposta do TCC . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .      5
+  1.4 Estrutura do TCC . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .       5
+
+2 Metodologia                                                                                          6
+  2.1 Método ensemble . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .      6
+  2.2 Dados experimentais . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .      8
+  2.3 Protocolo experimental . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .     9
+  2.4 Métricas e critérios utilizados . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .   10
+
+3 Materiais e Métodos                                                                                 11
+  3.1 Dados de entrada . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    11
+  3.2 Pré-processamento e rastreabilidade . . . . . . . . . . . . . . . . . . . . . . . . . . .       13
+  3.3 Protocolo de degradação controlada . . . . . . . . . . . . . . . . . . . . . . . . . . .        13
+  3.4 Pipeline da seleção e caracterização dos dados . . . . . . . . . . . . . . . . . . . . . .      14
+  3.5 Pipeline de pré-processamento e rastreabilidade (ETL) . . . . . . . . . . . . . . . . .         14
+  3.6 Pipeline do protocolo de degradação controlada . . . . . . . . . . . . . . . . . . . . .        16
+
+Referências                                                                                           17
+
+Agradecimentos                                                                                        18
+
+Apêndice A: Reprodutibilidade Computacional                                                           19
+
+
+
+
+                                                   2
+Apresentação
+
+Monografia apresentada ao Programa de Especialização em Data Science e Big Data da Universidade
+Federal do Paraná como requisito parcial para a obtenção do grau de especialista.
+Orientador: Prof. Dr. Wagner Hugo Bonat
+
+
+
+
+                                              3
+1 Introdução
+
+A seguir, apresenta-se o material de suporte referente à pesquisa conduzida para o Trabalho de
+Conclusão de Curso (TCC) da especialização em Data Science e Big Data na Universidade Federal
+do Paraná (UFPR), cujo objetivo é a adaptação do framework de combinação de saídas de algoritmos
+baseados em visão computacional proposto por Mujkic; Ravn; Christiansen (2023).
+
+
+1.1 Resumo e Objetivo
+
+O desenvolvimento do setor agrícola demanda investimentos contínuos em tecnologias inovadoras,
+essenciais para incrementar a produtividade e promover práticas mais sustentáveis no meio rural.
+Nesse contexto, a automação deve abranger todos os aspectos, incluindo veículos autônomos de nova
+geração e a modernização dos equipamentos existentes por meio de retrofit.
+Para garantir uma percepção ambiental mais confiável, as estratégias atuais de automação focam na
+combinação de diferentes sensores, como câmeras e sistemas LiDAR, junto com algoritmos de visão
+computacional. Essa mistura de informações busca tornar a detecção de obstáculos mais segura e
+confiável, reduzindo erros e priorizando a segurança durante as operações automatizadas, mesmo
+que isso signifique detectar algumas anomalias que na verdade não representam problemas.
+Por outro lado, a adoção dessa tecnologia implica aumento considerável nos custos operacionais.
+O uso do LiDAR, embora seja altamente eficiente na medição de distâncias, apresenta limitações
+financeiras e técnicas que dificultam sua implementação em processos de retrofit. Essa limitação é
+particularmente relevante no contexto brasileiro, onde grande parte dos tratores e equipamentos
+agrícolas carece de recursos tecnológicos avançados.
+Para pequenos e médios produtores ou para fazendas com maquinário antigo, a aquisição de sistemas
+baseados em sensores de alto custo não constitui uma alternativa viável. Assim, torna-se essencial
+promover pesquisas voltadas à otimização da eficiência dessas máquinas mediante o emprego de
+recursos limitados, como sensores ópticos convencionais. A questão central que impulsionou este
+trabalho foi:
+
+     Conseguimos garantir segurança para operações autonômas usando apenas uma câmera
+     barata e algoritmos inteligentes?
+
+Este estudo propõe a adaptação do framework desenvolvido por Mujkic; Ravn; Christiansen (2023)
+para um ambiente unimodal, operando exclusivamente com câmeras RGB. O objetivo principal
+consiste em avaliar se a combinação estratégica de modelos de visão computacional pode compensar
+a ausência de sensores de profundidade físicos, preservando a confiabilidade do sistema.
+A metodologia utilizada consiste na combinação de vários modelos que integram as saídas de três
+arquiteturas complementares — SegNet, YOLO e Autoencoder — aplicadas ao dataset FieldSAFE
+(Kragh et al., 2017).
+
+
+
+
+                                                4
+Destaca-se que a contribuição deste trabalho é a busca pela validação de uma estratégia de integração
+voltada à acessibilidade tecnológica. A pesquisa visa identificar caminhos para o desenvolvimento
+futuro de kits de autonomia e assistência ao condutor de baixo custo, possibilitando a modernização
+da frota agrícola no mercado brasileiro sem necessidade de investimentos elevados em hardware
+especializado.
+
+
+1.2 Automação Agrícola
+
+O crescimento populacional e a crescente demanda por práticas sustentáveis impulsionam a moderni-
+zação do setor agrícola. Segundo relatório da OECD; FAO (2024), o aumento global na demanda por
+alimentos requer inovações que elevem a produtividade agrícola ao mesmo tempo em que promovam
+a conservação ambiental.
+Os veículos agrícolas autônomos representam uma fronteira estratégica para a agricultura de precisão,
+contudo, sua viabilidade operacional esbarra em desafios perceptivos únicos. Ao contrário do
+domínio urbano, regido por regras visuais claras e infraestrutura estruturada, o ambiente agrícola é
+caracterizado pela não estruturação e entropia visual.
+A percepção ambiental é desafiada por fatores como a textura complexa das culturas, geometria
+irregular do solo, condições extremas de iluminação e a ocorrência imprevisível de obstáculos não
+padronizados. Diante desse cenário adverso, torna-se mandatório o desenvolvimento de arquiteturas
+de visão computacional resilientes, capazes de integrar informações através de estratégias avançadas
+de fusão sensorial ou integração de múltiplos modelos (ensemble).
+
+
+1.3 Proposta do TCC
+
+O estudo original de Mujkic; Ravn; Christiansen (2023) obteve resultados importantes, mas foi
+realizado com um dataset proprietário, limitando a reprodutibilidade. O presente trabalho propõe:
+
+  1. Objetivo principal: aplicação do método ensemble utilizando o dataset público FieldSAFE.
+     O dataset FieldSAFE (Kragh et al., 2017) é um dataset público multimodal (contém RGB,
+     estéreo, LiDAR, etc.) e com anotações de obstáculos de alta qualidade.
+  2. Objetivo específico: emular o comportamento de câmeras de baixo custo e, simultaneamente,
+     avaliar o impacto da redução da demanda computacional na precisão do método ensemble.
+
+
+1.4 Estrutura do TCC
+
+Este material, além desta introdução, está estruturado da seguinte forma:
+
+  • Seção 2: Metodologia
+  • Seção 3: Materiais e Métodos
+  • Seção 4: Resultados
+  • Seção 5: Discussão dos resultados
+  • Seção 6: Conclusão e trabalhos futuros
+
+
+
+
+                                                 5
+2 Metodologia
+
+Esta seção detalha o funcionamento da arquitetura do framework de percepção ambiental proposto
+por Mujkic; Ravn; Christiansen (2023). A abordagem original integra as saídas de três tarefas
+essenciais de compreensão de cena com o objetivo de aprimorar a precisão na detecção de obstáculos
+agrícolas. Neste trabalho, o framework utilizará somente dados RGB para as saídas dos três modelos
+complementares de visão computacional proposto pelos pesquisadores.
+
+
+2.1 Método ensemble
+
+O método ensemble (ensemble method) é utilizado para combinar a saída de diferentes tarefas
+de compreensão de cena. Esse método combina as saídas de três tarefas de compreensão de cena:
+segmentação semântica, detecção de objetos e detecção de anomalias.
+
+
+
+
+                  Figura 2.1: Diagrama do método ensemble no contexto agrícola
+
+
+Esse framework utiliza um detector de objetos para identificar sete classes específicas da agricultura
+(como ‘tractor’, ‘combine’, ‘trailer’, etc.). Um detector de anomalias para identificar outros objetos
+que não pertencem a essas classes, atribuindo-lhes a classe ‘unknown’. E um mapa de segmentação
+do campo para fornecer informações adicionais sobre se os objetos estão localizados dentro ou fora
+da área do campo.
+
+
+
+                                                  6
+Figura 2.2: Fluxo de detecção: identificação de classes agrícolas, detecção de anomalias e segmentação
+            de campo.
+
+
+A segmentação semântica, exemplificada pelo modelo SegNet, realiza a classificação de cada pixel da
+imagem, fornecendo o contexto geográfico necessário para distinguir áreas cultivadas (“plantação”)
+de outros ambientes (“céu”, “estrada”). Essa informação é fundamental para determinar se um
+obstáculo encontra-se dentro ou fora da zona operacional da máquina.
+Para a detecção de objetos, emprega-se o modelo YOLO, que identifica e classifica objetos previamente
+treinados por meio de caixas delimitadoras (bounding boxes). No contexto do método ensemble, essa
+segmentação reconhece sete classes específicas relacionadas ao ambiente agrícola, incluindo tratores,
+colheitadeiras e fardos.
+A identificação de anomalias é realizada pelo modelo Autoencoder, que detecta elementos fora do
+padrão visual habitual do campo através da reconstrução de imagens. Dessa forma, atua como uma
+rede de segurança ao identificar obstáculos não treinados pelo detector de objetos, como pedras
+grandes ou animais, atribuindo-lhes uma classificação genérica de ‘desconhecido’.
+De modo geral, o método ensemble é aplicado durante o tempo de inferência e opera independen-
+temente dos algoritmos utilizados em cada tarefa. Este método compreende etapas que incluem a
+extração de caixas delimitadoras para as anomalias detectadas, a eliminação das anomalias também
+identificadas pelo detector de objetos e a correspondência com a área do campo (field area matching)
+para classificar os objetos como internos ou externos à zona agrícola.
+
+
+
+
+                                                  7
+    Figura 2.3: Imagem esquemática do fluxo: entrada -> 3 modelos -> ensemble -> decisão.
+
+
+O método de ensemble proposto autores é independente algoritmos subjacentes, podendo ser descrito
+como uma combinação lógica dos resultados obtidos na detecção objetos e na de anomalias, o
+mapa de segmentação semântica do campo. Essa combinação emprega regras e limites (thresholds)
+predefinidos.
+Ao resolver conflitos espaciais, o sistema segue regras geométricas rígidas: se a proporção de interseção
+sobre união (IoU) for maior que 30% entre uma anomalia e um objeto detectado, a anomalia é
+descartada, adotando a classificação do detector de objetos. Além disso, o ensemble é fundamentado
+em limiares fixos e parâmetros geométricos previamente estabelecidos, como a dilatação de caixas
+em 20% para análise contextual e verificações de área do campo. Dessa forma, o sistema opera não
+como uma votação ponderada, mas como um fluxograma lógico rígido, assegurando previsibilidade e
+consistência nos resultados finais.
+
+
+2.2 Dados experimentais
+
+Para validar a adaptação do framework, utiliza-se o FieldSAFE (Kragh et al., 2017), um conjunto de
+dados multimodal projetado especificamente para a detecção de obstáculos em ambientes agrícolas
+não estruturados. O FieldSAFE possui uma representatividade da realidade de campo — capturando
+vegetação alta, terreno irregular e objetos não padronizados — e, crucialmente, à robustez de sua
+rotulação (“verdade terrestre”).
+Neste dataset a posição dos obstáculos estáticos (manequins, rochas, barris) foi mapeada com
+precisão centimétrica via GNSS RTK e ortofotos geradas por drones . Já os obstáculos móveis foram
+anotados manualmente quadro a quadro, com validação cruzada por drones. Essa alta confiabilidade
+do ground truth permite uma avaliação quantitativa rigorosa das detecções.
+
+
+
+
+                                                   8
+Embora o dataset forneça dados de múltiplos sensores (LiDAR, Câmera Estéreo, Térmica e Radar),
+este trabalho utiliza estritamente o fluxo de dados da câmera RGB, simulando a restrição de hardware
+proposta no TCC. A imagem a seguir resume as características do dataset utilizado:
+
+
+
+
+                  Figura 2.4: Resumo das características do dataset FieldSAFE.
+
+
+
+2.3 Protocolo experimental
+
+O protocolo experimental deste TCC consiste em aplicar degradações controladas às imagens
+RGB originais do FieldSAFE. O objetivo é emular o comportamento de câmeras de baixo custo e,
+simultaneamente, avaliar o impacto da redução da demanda computacional na precisão do método
+ensemble.
+As degradações adotadas seguem três eixos principais:
+
+  (i) redução progressiva da resolução espacial da imagem (full HD → 720p → 360p → 180p);
+ (ii) compressão JPEG com taxas crescentes (qualidade de 95%, 70%, 50%, 30%);
+(iii) introdução de ruído visual proporcional ao nível de compressão.
+
+A resolução 320x180 simula sensores de baixo custo (webcams antigas ou sensores IoT), enquanto a
+compressão JPEG simula a perda de dados em transmissões de baixa largura de banda em áreas
+rurais (Edge Computing). No entanto, a simples redução de resolução não replica fielmente a
+saída de sensores de baixo custo, que sofrem inerentemente com baixa relação sinal-ruído (SNR),
+especialmente em condições de iluminação variável no campo.
+A injeção de ruído Gaussiano proporcional ao nível de compressão foi adotada para simular o ganho
+eletrônico (ISO) característico de hardwares de entrada e validar a robustez do Autoencoder em
+distinguir anomalias estruturais (obstáculos) de artefatos estocásticos do sensor.
+
+
+
+                                                 9
+Para cada nível de degradação, o ensemble é executado e suas métricas (TP, FP, FN e IoU)
+comparadas ao ground truth do FieldSAFE. Esse procedimento permite identificar o limiar de
+ruptura (“break-even point”), no qual o método deixa de operar com confiabilidade adequada para
+aplicações de segurança.
+
+
+2.4 Métricas e critérios utilizados
+
+Em aplicações de segurança embarcada, a métrica prioritária é o recall (sensibilidade), pois falsos
+negativos representam risco direto de colisão. Assim, define-se como limiar mínimo de operação
+segura o maior nível de degradação visual no qual:
+
+   • recall permanece acima de 90% para obstáculos estáticos;
+   • recall permanece acima de 80% para obstáculos móveis;
+   • número de falsos negativos (FN) não ultrapassa 1 a cada 1.000 quadros.
+
+Esse critério segue a lógica de priorização da segurança apresentada por Mujkic; Ravn; Christiansen
+(2023), segundo a qual a redução de falsos negativos é mais importante do que o aumento moderado
+de falsos positivos. Tais limiares foram estabelecidos considerando a baixa velocidade de operação
+típica de tratores em tarefas de campo, onde o tempo de reação permite uma margem de segurança.
+
+
+
+
+                                                10
+3 Materiais e Métodos
+
+Neste estudo, a metodologia foi criada com o objetivo de testar se a combinação de modelos, ou
+seja, a redundância algorítmica por meio da fusão de diferentes sistemas, pode ajudar a superar as
+limitações de hardware causadas pelo uso de sensores monocromáticos de baixo custo. A estrutura
+apresentada na Figura 3.1 é feita de forma modular, o que será explicado com mais detalhes nas
+subseções a seguir.
+Para garantir clareza, as três primeiras subseções explicam de onde vêm os dados e como eles são
+manipulados antes de entrarem nos modelos descritos no bloco 4 da Figura 3.1 e na camada de
+ensemble, que é o bloco 5 dessa mesma figura. Essa organização torna o sistema mais fácil de
+entender, ampliar e reproduzir, pois permite trocar ou acrescentar modelos sem precisar mudar toda
+a estrutura do processo.
+Os processos relacionados à implementação, mostrados na Figura 3.1, representam o ciclo completo
+dos dados — ou seja, como eles são coletados, transformados e utilizados ao longo da pesquisa. Esses
+detalhes serão abordados nas próximas subseções. Dessa forma, essa arquitetura segue princípios
+da engenharia de software, garantindo que os experimentos sejam consistentes e facilitando futuras
+mudanças ou melhorias na estrutura.
+
+
+3.1 Dados de entrada
+
+A escolha do dataset FieldSAFE foi feita com o objetivo de validar o sistema RGB usando uma
+referência confiável. Mesmo que a solução seja baseada apenas em imagens RGB, foi essencial usar
+um conjunto de dados multimodal para criar uma “verdade terrestre” (ground truth) mais sólida.
+Esse dataset foi selecionado por ter anotações feitas com sensores de alta precisão, como LiDAR
+e GNSS-RTK, o que permite comparar o sistema desenvolvido com um padrão de referência que
+reflete com fidelidade a realidade do ambiente avaliado.
+Na fase inicial de extração e preparação dos dados, o procedimento pode ser visto no primeiro bloco
+da Figura 3.2. O processo foi dividido em etapas:
+
+  a. Filtragem Modal e Temporal: Como o dataset contém aproximadamente duas horas de registros
+     brutos de sensores, foi feita a separação do canal correspondente às imagens da câmera web.
+  b. Curadoria e Rotulagem (Ground Truth): Para garantir uma supervisão adequada dos modelos,
+     as imagens extraídas foram associadas às suas respectivas anotações de ground truth. A
+     confiabilidade dessas anotações é fundamental para que as métricas de avaliação sejam válidas.
+
+       • Detecção de Objetos: utilizou-se anotação do tipo bounding box (caixa delimitadora) em
+         duas dimensões, categorizando classes críticas tais como tratores, humanos e implementos
+         agrícolas.
+
+
+
+
+                                                11
+Figura 3.1: Workflow da pesquisa.
+
+               12
+       • Segmentação Semântica: empregou-se anotação pixel-wise, essencial para distinguir áreas
+         cultiváveis (“field”) de obstáculos ou regiões não navegáveis.
+
+Assim, dada a natureza experimental da degradação de imagens, a simples execução dos modelos
+seria insuficiente para garantir a reprodutibilidade científica. Por isso, implementou-se também um
+pipeline de rastreabilidade automatizada, conforme detalhado na subseção subsequente.
+
+
+3.2 Pré-processamento e rastreabilidade
+
+O pré-processamento foi realizado além do simples redimensionamento de imagens, resultando na
+geração de arquivos de manifesto para cada instância de teste. Essa estratégia permite a auditoria
+precisa de cada inferência, vinculando-a aos parâmetros específicos de ruído e compressão utilizados,
+o que possibilita a isolação de variáveis de confusão e assegura que eventuais degradações no
+desempenho sejam atribuídas exclusivamente aos fatores de deterioração introduzidos.
+Adicionalmente, considerando a exigência de entradas de dimensão fixa por redes neurais profundas,
+as imagens com resoluções variadas do dataset original foram submetidas a um processo de redimen-
+sionamento adaptativo. Para tarefas de segmentação, as imagens foram padronizadas em dimensões
+específicas (por exemplo, 1024 × 385 pixels) visando otimizar o desempenho da arquitetura SegNet.
+Para detecção de objetos utilizando YOLOv5, adotou-se uma resolução quadrada (por exemplo,
+640 × 640 pixels) com o objetivo de maximizar a eficiência na inferência em tempo real.
+O procedimento culmina na geração dos manifestos contendo metadados, os quais asseguram a
+rastreabilidade do experimento ao associar cada tensor de imagem ao seu rótulo correspondente
+antes da entrada nos modelos específicos.
+
+
+3.3 Protocolo de degradação controlada
+
+Diferentemente de abordagens que avaliam modelos sob condições ideais, este protocolo foi desenvol-
+vido para identificar o ponto de falha do sistema. A simulação de câmeras de baixo custo não se
+restringiu à redução da resolução (downsampling), incluindo também a introdução de ruído ISO e
+artefatos provenientes de compressão JPEG.
+Essa estratégia metodológica é fundamentada na física dos sensores econômicos: webcams de
+baixo custo não apenas capturam uma quantidade reduzida de pixels, mas também introduzem
+ruído térmico e distorções cromáticas. Assim, o protocolo de degradação não limita-se a diminuir
+a qualidade da entrada, mas também corrompe o sinal, possibilitando avaliar a resistência do
+Autoencoder em distinguir entre “suje no sensor” e “obstáculos reais”. Para simular câmeras de
+baixa qualidade, aplicaram-se degradações progressivas às imagens RGB antes do procedimento de
+inferência:
+
+  • redução da resolução (1080p → 720p → 360p → 180p)
+  • compressão JPEG controlada (95%, 70%, 50%, 30%)
+  • injeção proporcional de ruído
+
+
+
+
+                                                 13
+Cada nível de degradação resulta em uma rodada completa de inferência, fusão e avaliação. Lem-
+brando que o dataset FieldSAFE possui tanto uma “Web camera” quanto uma “Stereo camera” que
+fornecem dados RGB. Assim, optou-se por utilizar a Web camera Logitech C920 citada na Tabela
+2 do artigo de Kragh et al. (2017), já que essa representa melhor o baixo custo do que a câmera
+estéreo Multisense.
+
+
+3.4 Pipeline da seleção e caracterização dos dados
+
+A validação da arquitetura proposta requer um conjunto de dados que represente fielmente a
+complexidade e a não estruturação do ambiente agrícola. Para este fim, utilizou-se o dataset
+FieldSAFE, que fornece aproximadamente duas horas de registros sensoriais coletados durante
+operações de corte de grama na Dinamarca, contendo obstáculos estáticos e móveis, como humanos,
+manequins, pedras e barris.
+Embora o FieldSAFE seja um dataset multimodal contendo dados de LiDAR, radar e câmeras térmica
+e estéreo, este trabalho restringe-se estritamente ao domínio visual (RGB) para aderir à premissa de
+baixo custo. Conforme detalhado por Kragh et al. (2017) na Tabela 2 de sua documentação técnica,
+menciona que a plataforma de gravação dispõe de dois sensores RGB principais: uma câmera estéreo
+Multisense S21 e uma web camera Logitech C920.
+Para simular de forma realista as limitações de hardware acessível a pequenos e médios produtores,
+optou-se pela utilização exclusiva do fluxo de vídeo da Logitech C920. Este sensor, com resolução
+nativa de 1920 × 1080 a 30 fps, representa o perfil de equipamento de entrada alvo desta pesquisa,
+em contraste com sensores estéreo de alto custo.
+A seleção deste fluxo de dados específico isola a variável “custo de hardware”, permitindo que a
+avaliação do método ensemble foque na capacidade algorítmica de compensar a simplicidade do
+sensor. Por isso, o script1 de ingestão de dados foi configurado para descartar as entradas de LiDAR
+e Radar, processando exclusivamente o fluxo de vídeo da câmera Logitech C920.
+
+
+3.5 Pipeline de pré-processamento e rastreabilidade (ETL)
+
+Dada a natureza experimental do estudo, que envolve a degradação intencional dos dados, a
+integridade e a reprodutibilidade dos experimentos são asseguradas por um pipeline de extração,
+transformação e carga (ETL).2
+O procedimento inicia-se com a filtragem modal, onde o fluxo de dados brutos é processado para
+descartar nuvens de pontos e dados inerciais, preservando apenas os quadros da câmera Logitech
+C920 e seus respectivos metadados temporais. Em seguida, executa-se a curadoria de Ground
+Truth, associando cada quadro às anotações de caixas delimitadoras (bounding boxes) e máscaras
+de segmentação fornecidas pelo dataset.
+Para adequar as imagens às arquiteturas dos modelos de redes neurais utilizadas, aplica-se um
+redimensionamento adaptativo (adaptive resize):
+
+
+ 1
+     Os scripts desta subseção estão disponíveis no repositório: github.com/osvaldojeronymo/tcc-fieldsafe-data
+ 2
+     Os scripts desta subseção estão disponíveis no repositório: github.com/osvaldojeronymo/tcc-fieldsafe-data
+
+
+
+
+                                                           14
+Figura 3.2: Data lineage: métodos empregados na pesquisa.
+
+                           15
+      • Para a tarefa de segmentação semântica (SegNet), as imagens são padronizadas para 1024 × 385
+        pixels.
+      • Para a detecção de objetos (YOLOv5), adota-se a resolução quadrada de 640 × 640 pixels.
+
+A rastreabilidade é garantida pela geração automática de manifestos de auditoria para cada instância
+de teste. Estes documentos registram os metadados da imagem original, as transformações aplicadas
+e os rótulos associados, assegurando que qualquer inferência possa ser auditada e reproduzida.
+Ademais, a implementação computacional foi segregada em três repositórios distintos para garantir
+o desacoplamento entre a engenharia de dados e a modelagem algorítmica. O pré-processamento,
+executado via scripts do módulo tcc-fieldsafe-data, gerou versões estáticas do dataset FieldSAFE
+(Kragh et al., 2017) com diferentes níveis de degradação. Isso assegura que tanto o modelo basal
+(YOLOv5) quanto o sistema proposto (Ensemble) sejam avaliados sob as exatas mesmas condições
+de entrada, eliminando a variabilidade estocástica de uma execução em tempo real durante a fase de
+validação.
+
+
+3.6 Pipeline do protocolo de degradação controlada
+
+Para avaliar a resiliência do sistema ensemble frente às limitações reais de hardware de baixo custo,
+implementou-se um protocolo de degradação controlada.3 Diferente de abordagens que avaliam
+modelos sob condições ideais, este protocolo visa identificar o “ponto de ruptura” da confiabilidade
+do sistema.
+As imagens curadas são submetidas a três vetores de degradação progressiva antes da inferência:
+
+      1. Redução de Resolução Espacial (Downsampling): simulação de sensores de baixa
+         densidade de pixels, reduzindo a resolução original (Full HD) progressivamente para 720p,
+         360p e 180p.
+      2. Compressão com Perdas: aplicação de compressão JPEG com taxas de qualidade decres-
+         centes (95%, 70%, 50% e 30%) para emular artefatos de transmissão em redes de baixa largura
+         de banda.
+      3. Injeção de Ruído: introdução de ruído visual proporcional aos níveis de compressão para
+         simular o ganho eletrônico (ISO) e ruído térmico característicos de sensores econômicos
+         operando em condições de iluminação variável.
+
+Cada combinação de parâmetros de degradação gera uma nova versão do dataset, resultando em uma
+rodada completa de inferência, fusão e avaliação. Isso permite mapear a performance do sistema
+não apenas em um cenário estático, mas ao longo de uma curva de degradação da qualidade do sinal
+de entrada.
+
+
+
+
+ 3
+     Os scripts desta subseção estão disponíveis no repositório: github.com/osvaldojeronymo/tcc-fieldsafe-data.
+
+
+
+
+                                                           16
+Referências
+
+KRAGH, M. F. et al. FieldSAFE: Dataset for Obstacle Detection in Agriculture. Sensors, [s. l.], v.
+17, n. 11, p. 2579, 2017. Disponível em: https://doi.org/10.3390/s17112579. Acesso em: 25 nov.
+2025.
+
+MUJKIC, E.; RAVN, O.; CHRISTIANSEN, M. P. Framework for environment perception: Ensemble
+method for vision-based scene understanding algorithms in agriculture. Frontiers in Robotics
+and AI, [s. l.], v. 9, p. 982581, 2023. Disponível em: https://doi.org/10.3389/frobt.2022.982581.
+Acesso em: 25 nov. 2025.
+
+OECD; FAO. OECD-FAO Agricultural Outlook 2024-2033. Paris/Rome: OECD Pu-
+blishing/FAO, 2024. Disponível em: https://doi.org/10.1787/4c5d2cfb-en. Acesso em: 25 nov.
+2025.
+
+
+
+
+                                               17
+Agradecimentos
+
+Minha trajetória começou de uma forma bem simples, movida pela curiosidade sobre o potencial
+dos dados. Quando decidi fazer minha especialização em Data Science e Big Data na Universidade
+Federal do Paraná (UFPR), encontrei muitos desafios, mas também vivi momentos de grande
+aprendizado e conquista. Este material é uma maneira de compartilhar um pouco dessa experiência,
+cheia de descobertas e superações.
+Durante o curso, tive a oportunidade de explorar temas bastante complexos e interessantes. Cada
+parte deste conteúdo representa uma etapa dessa jornada, trazendo não só o conhecimento técnico
+que adquiri, mas também as experiências pessoais que ajudaram a fortalecer minha paixão pelos
+dados e construir um marco inicial na minha trajetória na ciência de dados.
+Quero agradecer aos professores e colegas que me apoiaram e incentivaram ao longo do caminho.
+Sem a orientação e o incentivo deles, talvez eu não tivesse chegado até aqui. Também sou muito
+grato à minha família e aos amigos, cujo apoio incondicional foi fundamental para que eu conseguisse
+concluir essa especialização.
+Espero que esse material seja útil para quem deseja aprender mais sobre o fascinante mundo da
+Data Science.
+
+
+
+
+                                                18
+Apêndice A: Reprodutibilidade Computacional
+
+Todos os experimentos descritos neste trabalho foram executados em ambiente Linux (Ubuntu
+24.04.3 LTS), utilizando Python 3.12.3. Para garantir a transparência e a reprodutibilidade dos
+resultados apresentados na Seção 4 - Resultados, os códigos-fonte, arquivos de configuração e logs de
+execução bruta estão disponíveis publicamente nos seguintes repositórios:
+
+  1. Pipeline de Dados: github.com/osvaldojeronymo/tcc-fieldsafe-data
+  2. Modelos: github.com/osvaldojeronymo/tcc-fieldsafe-models
+  3. Resultados e Logs: github.com/osvaldojeronymo/tcc-fieldsafe-ensemble
+
+O histórico detalhado das execuções (experimental logs) encontra-se na pasta docs/experiments do
+repositório 3.
+
+
+
+
+                                                 19
+
